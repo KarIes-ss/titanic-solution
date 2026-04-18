@@ -2,11 +2,13 @@ import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel
 from catboost import CatBoostClassifier
+from pathlib import Path
 
 app = FastAPI()
 
+MODEL_PATH = Path(__file__).resolve().parent.parent / "notebooks" / "cat_model.cbm"
 cat_model = CatBoostClassifier()
-cat_model.load_model("../notebooks/cat_model.cbm", "cbm")
+cat_model.load_model(str(MODEL_PATH), "cbm")
 
 class Passenger(BaseModel):
     Pclass: int

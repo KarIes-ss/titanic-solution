@@ -1,17 +1,8 @@
+import os
 import streamlit as st
-import pandas as pd
-from pathlib import Path
-from catboost import CatBoostClassifier
+import requests
 
-MODEL_PATH = Path(__file__).resolve().parent.parent / "notebooks" / "cat_model.cbm"
-
-@st.cache_resource
-def load_model():
-    model = CatBoostClassifier()
-    model.load_model(str(MODEL_PATH), format="cbm")
-    return model
-
-model = load_model()
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/predict")
 
 # 🔹 Настройки страницы
 st.set_page_config(
@@ -24,7 +15,7 @@ st.title("Titanic Survival Predictor")
 
 st.write("Введите данные пассажира и узнайте шанс выживания")
 
-# 🔹 Форма
+# 🔹 Форма (лучше, чем просто кнопки)
 with st.form("prediction_form"):
 
     col1, col2 = st.columns(2)
@@ -43,29 +34,41 @@ with st.form("prediction_form"):
 
     submit = st.form_submit_button("Predict")
 
-# 🔹 Логика предсказания
+# 🔹 Логика
 if submit:
-    data = pd.DataFrame([{
+    data = {
         "Pclass": pclass,
         "Sex": sex,
+        "Age": age,
         "SibSp": sibsp,
-        "Parch": parch
-    }])
+        "Parch": parch,
+        "Fare": fare,
+        "Embarked": embarked
+    }
 
-    data = pd.get_dummies(data, columns=["Sex"], drop_first=False)
-    for col in ["Sex_female", "Sex_male"]:
-        if col not in data.columns:
-            data[col] = 0
-    data = data[["Pclass", "SibSp", "Parch", "Sex_female", "Sex_male"]]
+    try:
+        with st.spinner("Модель думает..."):
+            response = requests.post(
+                API_URL,
+                json=data,
+                timeout=10
+            )
+            response.raise_for_status()
 
-    with st.spinner("Модель думает..."):
-        prediction = int(model.predict(data)[0])
-        proba = float(model.predict_proba(data)[0][1])
+        result = response.json()
 
-    st.subheader("Результат")
-    if prediction == 1:
-        st.success("🟢 Пассажир ВЫЖИВЕТ")
-    else:
-        st.error("🔴 Пассажир НЕ выживет")
+        prediction = result["prediction"]
+        proba = result["survival_probability"]
 
-    st.metric("Вероятность выживания", f"{proba:.2f}")
+        st.subheader("Результат")
+
+        if prediction == 1:
+            st.success("🟢 Пассажир ВЫЖИВЕТ")
+        else:
+            st.error("🔴 Пассажир НЕ выживет")
+
+        st.metric("Вероятность выживания", f"{proba:.2f}")
+
+    except Exception as e:
+        st.error("Ошибка подключения к API")
+        st.write(e)
