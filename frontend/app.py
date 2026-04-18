@@ -1,7 +1,9 @@
 import streamlit as st
 import requests
 
-API_URL = st.secrets.get("API_URL", "http://127.0.0.1:8000/predict")
+API_URL = st.secrets.get("API_URL", "http://127.0.0.1:8000/predict").rstrip("/")
+if not API_URL.endswith("/predict"):
+    API_URL = f"{API_URL}/predict"
 
 # 🔹 Настройки страницы
 st.set_page_config(
