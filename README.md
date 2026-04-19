@@ -2,7 +2,7 @@
 
 ML модель для предсказания вероятности выживания пассажиров Титаника.
 
-[Live Demo](https://titanic-solution.streamlit.app) | [API](https://titanic-solution.onrender.com) | [Notebook](notebooks/titanic.ipynb)
+[Live Demo](https://titanic-solution-main.streamlit.app/) | [API](https://titanic-solution.onrender.com) | [Notebook](notebooks/titanic.ipynb)
 
 ## О проекте
 
